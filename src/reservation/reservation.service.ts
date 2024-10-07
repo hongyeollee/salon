@@ -106,19 +106,28 @@ export class ReservationServcie {
     workhour: any,
     requestBody: RequestBody,
   ): Timeslot[] {
-    const openTime = this.calcTime(currentDay, workhour.open_interval);
-    const closeTime = this.calcTime(currentDay, workhour.close_interval);
+    const openTime = this.calcTime(
+      currentDay,
+      requestBody.is_ignore_workhour ? 0 : workhour.open_interval,
+    );
+    const closeTime = this.calcTime(
+      currentDay,
+      requestBody.is_ignore_workhour ? 86400 : workhour.close_interval,
+    );
     const timeslots: Timeslot[] = [];
 
     for (
-      let time = Math.floor(openTime / 1000);
-      time + requestBody.service_duration <= Math.floor(closeTime / 1000);
+      let time = Math.floor(openTime);
+      time + requestBody.service_duration <= Math.floor(closeTime);
       time += requestBody.timeslot_interval || this.DEFAULT_TIMESLOT_INTERVAL
     ) {
       const beginAt = time;
       const endAt = time + requestBody.service_duration;
 
-      if (this.isOverlappingWithEvents(beginAt, endAt, requestBody)) {
+      if (
+        !requestBody.is_ignore_schedule &&
+        this.isOverlappingWithEvents(beginAt, endAt, requestBody)
+      ) {
         continue;
       }
 
